@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 dotenv = "0.15.0"
-serenity = "0.12.4"
+serenity = { version = "0.12.4", features = ["cache", "client", "gateway", "model"] }
 tokio = { version = "1.47.1", features = ["full"] }
