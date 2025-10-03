@@ -4,7 +4,7 @@ use serenity::all::{
 };
 use serenity::{Client, async_trait};
 
-mod rarety;
+mod config;
 
 struct Handler;
 
