@@ -1,7 +1,7 @@
 [generator]
 channel_id = "1239233009886957709"
 
-[rarety]
+[drop_rates]
 common = 59.0
 rare = 25.0
 epic = 14.0

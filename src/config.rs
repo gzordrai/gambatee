@@ -1,6 +1,7 @@
 use config::{Config as C, ConfigError, File};
 use rand::{seq::IndexedRandom, Rng};
 use serde::Deserialize;
+use serenity::prelude::TypeMapKey;
 
 type Names = Vec<String>;
 
@@ -11,6 +12,10 @@ pub struct Config {
     pub generator: Generator,
     pub drop_rates: DropRates,
     pub channels: Channels,
+}
+
+impl TypeMapKey for Config {
+    type Value = Config;
 }
 
 #[derive(Clone, Debug, Deserialize)]
