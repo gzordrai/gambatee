@@ -12,6 +12,11 @@ use crate::config::{Config, load_config};
 mod config;
 
 struct Handler;
+struct VoiceSessionTime;
+struct UserVoiceSession {
+    total_time: u64,
+    last_joined_timestamp: u64,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -43,6 +48,10 @@ impl EventHandler for Handler {
     }
 }
 
+impl TypeMapKey for VoiceSessionTime {
+    type Value = HashMap<u64, UserVoiceSession>;
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -63,5 +72,6 @@ async fn main() {
 async fn init_voice_session(client: &Client, config: Config) {
     let mut data = client.data.write().await;
 
+    data.insert::<VoiceSessionTime>(HashMap::default());
     data.insert::<Config>(config);
 }
