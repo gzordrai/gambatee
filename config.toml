@@ -1,0 +1,48 @@
+[generator]
+channel_id = "1239233009886957709"
+
+[drop_rates]
+common = 59.0
+rare = 25.0
+epic = 14.0
+legendary = 2.0
+
+[channels]
+common = [
+    "ChatonBatée",
+    "BatéeMobile",
+    "Albatée poele de l'espace",
+    "Batéeman le justicier",
+    "TurboBatée",
+    "Batée pas tilt",
+    "CyberBatée",
+]
+rare = [
+    "Kimono batée",
+    "Mortier batée",
+    "From master to bois",
+    "OW dead game",
+    "Ones Under All",
+    "Chay Cookie Queen",
+    "C'est l'heure du DuDuDuDule",
+    "Mawel Riwals",
+    "BF6 Hype channel",
+]
+epic = [
+    "Drop Pochinki",
+    "Nouveau son de Lanterne",
+    "Bretonite",
+    "La cuisine de Péru",
+    "Le studio de Lanterne",
+    "Pandapika",
+    "Paris Gaming School",
+    "Grimpette et Bicrave",
+]
+legendary = [
+    "Naillik c'est Killian a l'envers",
+    "Cocopd",
+    "Le labo de Nomis 4",
+    "Taximon",
+    "PimPoum Call Center",
+    "チキン",
+]
