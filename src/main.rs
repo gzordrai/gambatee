@@ -11,6 +11,8 @@ use crate::config::{Config, load_config};
 
 mod config;
 
+const DEFAULT_CHANNEL_NAME: &str = "channel";
+
 struct Handler;
 struct VoiceSessionTime;
 struct UserVoiceSession {
@@ -32,7 +34,11 @@ impl EventHandler for Handler {
             if let Ok(channel) = channel_id.to_channel(&ctx).await {
                 if let Some(guild_channel) = channel.guild() {
                     if let Some(parent_id) = guild_channel.parent_id {
-                        let name = config.drop_rates.get_random_drop(&config.channels).unwrap(); // to change, remove unwrap for something else
+                        let name = config
+                            .drop_rates
+                            .get_random_drop(&config.channels)
+                            .map_or(DEFAULT_CHANNEL_NAME, |s| s.as_str());
+
                         let builder = CreateChannel::new(name)
                             .category(parent_id)
                             .kind(ChannelType::Voice);
