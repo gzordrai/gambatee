@@ -1,7 +1,8 @@
 use dotenv::dotenv;
 use log::info;
 use serenity::all::{
-    ChannelType, Context, CreateChannel, EventHandler, GatewayIntents, GuildId, Ready, VoiceState,
+    ChannelType, Context, CreateChannel, EventHandler, GatewayIntents, GuildId, Ready, UserId,
+    VoiceState,
 };
 use serenity::prelude::TypeMapKey;
 use serenity::{Client, async_trait};
@@ -43,10 +44,12 @@ impl EventHandler for Handler {
                             .category(parent_id)
                             .kind(ChannelType::Voice);
 
-                        if let Err(e) = GuildId::new(guild_id.into())
+                        let channel = GuildId::new(guild_id.into())
                             .create_channel(&ctx, builder)
                             .await
-                        {}
+                            .unwrap();
+
+                        let _ = guild_id.move_member(&ctx, new.user_id, channel.id);
                     }
                 }
             }
