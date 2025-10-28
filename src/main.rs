@@ -32,7 +32,9 @@ impl EventHandler for Handler {
         let config = data.get_mut::<Config>().unwrap();
 
         if let (Some(channel_id), Some(guild_id)) = (new.channel_id, new.guild_id) {
-            if let Ok(channel) = channel_id.to_channel(&ctx).await {
+            if let Ok(channel) = channel_id.to_channel(&ctx).await
+                && channel_id == config.generator.channel_id
+            {
                 if let Some(guild_channel) = channel.guild() {
                     if let Some(parent_id) = guild_channel.parent_id {
                         let name = config
