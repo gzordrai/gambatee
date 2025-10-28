@@ -1,8 +1,7 @@
 use dotenv::dotenv;
 use log::info;
 use serenity::all::{
-    ChannelType, Context, CreateChannel, EventHandler, GatewayIntents, GuildId, Ready, UserId,
-    VoiceState,
+    ChannelType, Context, CreateChannel, EventHandler, GatewayIntents, GuildId, Ready, VoiceState,
 };
 use serenity::prelude::TypeMapKey;
 use serenity::{Client, async_trait};
