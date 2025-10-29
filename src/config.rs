@@ -1,7 +1,7 @@
 use config::{Config as C, ConfigError, File};
-use rand::{seq::IndexedRandom, Rng};
+use rand::{Rng, seq::IndexedRandom};
 use serde::Deserialize;
-use serenity::prelude::TypeMapKey;
+use serenity::{all::ChannelId, prelude::TypeMapKey};
 
 type Names = Vec<String>;
 
@@ -20,7 +20,8 @@ impl TypeMapKey for Config {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Generator {
-    pub channel_id: u64,
+    pub channel_id: ChannelId,
+    pub parent_id: ChannelId,
 }
 
 #[derive(Clone, Debug, Deserialize)]
