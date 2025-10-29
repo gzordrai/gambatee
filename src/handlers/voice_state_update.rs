@@ -1,4 +1,6 @@
-use serenity::all::{ChannelId, ChannelType, Context, CreateChannel, GuildId, Result, VoiceState};
+use serenity::all::{
+    ChannelType, Context, CreateChannel, GuildChannel, GuildId, Result, VoiceState,
+};
 
 use crate::config::Config;
 
@@ -38,9 +40,23 @@ pub async fn voice_state_update(
     }
 
     if let Some(state) = old {
-        if let Some(channel_id) = state.channel_id {
-            if channel_is_empty(&ctx, channel_id).await? {
-                channel_id.delete(&ctx).await?;
+        handle_deconnection(&ctx, config, state).await?;
+    }
+
+    Ok(())
+}
+
+async fn handle_deconnection(ctx: &Context, config: &mut Config, state: VoiceState) -> Result<()> {
+    if let Some(channel_id) = state.channel_id {
+        if channel_id != config.generator.channel_id {
+            let channel = channel_id.to_channel(&ctx).await?;
+
+            if let Some(guild_channel) = channel.guild() {
+                if guild_channel.parent_id == Some(config.generator.parent_id)
+                    && channel_is_empty(&ctx, &guild_channel).await?
+                {
+                    channel_id.delete(&ctx).await?;
+                }
             }
         }
     }
@@ -48,11 +64,6 @@ pub async fn voice_state_update(
     Ok(())
 }
 
-async fn channel_is_empty(ctx: &Context, channel_id: ChannelId) -> Result<bool> {
-    let channel = channel_id.to_channel(ctx).await?;
-    let Some(guild_channel) = channel.guild() else {
-        return Ok(true);
-    };
-
-    Ok(guild_channel.members(ctx)?.is_empty())
+async fn channel_is_empty(ctx: &Context, channel: &GuildChannel) -> Result<bool> {
+    Ok(channel.members(ctx)?.is_empty())
 }
