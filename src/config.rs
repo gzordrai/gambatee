@@ -1,5 +1,5 @@
 use config::{Config as C, ConfigError, File};
-use rand::{seq::IndexedRandom, Rng};
+use rand::{Rng, seq::IndexedRandom};
 use serde::Deserialize;
 use serenity::prelude::TypeMapKey;
 
