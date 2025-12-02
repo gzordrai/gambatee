@@ -1,14 +1,24 @@
-FROM rust:1.90.0-slim AS builder
+FROM rust:1.91.1-alpine AS builder
+
+RUN apk add --no-cache \
+    build-base \
+    ca-certificates \
+    openssl-dev \
+    openssl-libs-static \
+    musl-dev \
+    pkgconfig
 
 WORKDIR /app
 
 COPY . .
 
-RUN cargo build --release
+RUN cargo build --release --no-default-features
 
-FROM debian:bookworm-slim
+FROM alpine:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    ca-certificates \
+    openssl
 
 WORKDIR /usr/local/bin
 
