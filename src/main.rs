@@ -1,47 +1,37 @@
-use dotenv::dotenv;
+use std::str::FromStr;
+
 use serenity::Client;
 use serenity::all::GatewayIntents;
-use serenity::prelude::TypeMapKey;
-use std::collections::HashMap;
 
-use crate::{
-    config::{Config, load_config},
-    handlers::Handler,
-};
+use crate::{config::Config, error::Result, handlers::Handler, voice_stats::VoiceStats};
 
 mod config;
+mod error;
 mod handlers;
-
-struct VoiceSessionTime;
-struct UserVoiceSession {
-    total_time: u64,
-    last_joined_timestamp: u64,
-}
-
-impl TypeMapKey for VoiceSessionTime {
-    type Value = HashMap<u64, UserVoiceSession>;
-}
+mod voice_stats;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     env_logger::init();
-    dotenv().ok();
 
-    let token = std::env::var("DISCORD_TOKEN").expect("Failed to find discord token");
-    let config = load_config().expect("Failed to load config");
+    let token = std::env::var("DISCORD_TOKEN")?;
+    let url = std::env::var("DATABASE_URL")?;
+    let config = Config::from_str("config.toml")?;
     let intents = GatewayIntents::GUILDS | GatewayIntents::GUILD_VOICE_STATES;
+    let voice_stats = VoiceStats::new(&url).await?;
+
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler)
-        .await
-        .expect("Failed to create client");
+        .event_handler(Handler::new(voice_stats))
+        .await?;
 
     init_voice_session(&client, config).await;
-    client.start().await.expect("Failed to start client");
+    client.start().await?;
+
+    Ok(())
 }
 
 async fn init_voice_session(client: &Client, config: Config) {
     let mut data = client.data.write().await;
 
-    data.insert::<VoiceSessionTime>(HashMap::default());
     data.insert::<Config>(config);
 }
