@@ -1,17 +1,30 @@
-use config::{Config as C, ConfigError, File};
+use std::str::FromStr;
+
+use config::{ConfigError, File};
 use rand::{Rng, seq::IndexedRandom};
 use serde::Deserialize;
 use serenity::{all::ChannelId, prelude::TypeMapKey};
 
 type Names = Vec<String>;
 
-const CONFIG_FILE: &str = "config.toml";
-
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub generator: Generator,
     pub drop_rates: DropRates,
     pub channels: Channels,
+}
+
+impl FromStr for Config {
+    type Err = ConfigError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let file = File::with_name(s);
+
+        config::Config::builder()
+            .add_source(file)
+            .build()?
+            .try_deserialize::<Config>()
+    }
 }
 
 impl TypeMapKey for Config {
@@ -57,12 +70,4 @@ pub struct Channels {
     pub rare: Names,
     pub epic: Names,
     pub legendary: Names,
-}
-
-pub fn load_config() -> Result<Config, ConfigError> {
-    let config = C::builder()
-        .add_source(File::with_name(CONFIG_FILE))
-        .build()?;
-
-    config.try_deserialize()
 }
