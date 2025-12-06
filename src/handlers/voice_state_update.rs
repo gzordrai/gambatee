@@ -2,11 +2,12 @@ use serenity::all::{
     ChannelType, Context, CreateChannel, GuildChannel, GuildId, Result, VoiceState,
 };
 
-use crate::config::Config;
+use crate::{config::Config, voice_stats::VoiceStats};
 
 const DEFAULT_CHANNEL_NAME: &str = "channel";
 
 pub async fn voice_state_update(
+    stats: VoiceStats,
     ctx: Context,
     old: Option<VoiceState>,
     new: VoiceState,

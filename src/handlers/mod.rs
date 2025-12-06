@@ -4,9 +4,19 @@ use serenity::{
     async_trait,
 };
 
+use crate::voice_stats::VoiceStats;
+
 pub mod voice_state_update;
 
-pub struct Handler;
+pub struct Handler {
+    voice_stats: VoiceStats,
+}
+
+impl Handler {
+    pub fn new(voice_stats: VoiceStats) -> Self {
+        Self { voice_stats }
+    }
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -15,7 +25,7 @@ impl EventHandler for Handler {
     }
 
     async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
-        match voice_state_update::voice_state_update(ctx, old, new).await {
+        match voice_state_update::voice_state_update(self.voice_stats, ctx, old, new).await {
             Ok(_) => info!(""),
             Err(e) => warn!("Encountered error: {:?}", e),
         }
