@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::{info, warn};
 use serenity::{
     all::{Context, EventHandler, Ready, VoiceState},
@@ -9,11 +11,11 @@ use crate::voice_stats::VoiceStats;
 pub mod voice_state_update;
 
 pub struct Handler {
-    voice_stats: VoiceStats,
+    voice_stats: Arc<VoiceStats>,
 }
 
 impl Handler {
-    pub fn new(voice_stats: VoiceStats) -> Self {
+    pub fn new(voice_stats: Arc<VoiceStats>) -> Self {
         Self { voice_stats }
     }
 }
@@ -25,7 +27,7 @@ impl EventHandler for Handler {
     }
 
     async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
-        match voice_state_update::voice_state_update(self.voice_stats, ctx, old, new).await {
+        match voice_state_update::voice_state_update(&self.voice_stats, ctx, old, new).await {
             Ok(_) => info!(""),
             Err(e) => warn!("Encountered error: {:?}", e),
         }

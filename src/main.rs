@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 
 use serenity::Client;
 use serenity::all::GatewayIntents;
@@ -18,7 +18,7 @@ async fn main() -> Result<()> {
     let url = std::env::var("DATABASE_URL")?;
     let config = Config::from_str("config.toml")?;
     let intents = GatewayIntents::GUILDS | GatewayIntents::GUILD_VOICE_STATES;
-    let voice_stats = VoiceStats::new(&url).await?;
+    let voice_stats = Arc::new(VoiceStats::new(&url).await?);
 
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler::new(voice_stats))

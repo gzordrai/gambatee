@@ -1,65 +1,91 @@
-use serenity::all::{
-    ChannelType, Context, CreateChannel, GuildChannel, GuildId, Result, VoiceState,
-};
+use serenity::all::{ChannelType, Context, CreateChannel, GuildChannel, VoiceState};
 
-use crate::{config::Config, voice_stats::VoiceStats};
+use crate::{config::Config, error::Result, voice_stats::VoiceStats};
 
 const DEFAULT_CHANNEL_NAME: &str = "channel";
 
 pub async fn voice_state_update(
-    stats: VoiceStats,
+    stats: &VoiceStats,
     ctx: Context,
     old: Option<VoiceState>,
     new: VoiceState,
 ) -> Result<()> {
-    let mut data = ctx.data.write().await;
-    let config = data.get_mut::<Config>().unwrap();
+    let data = ctx.data.read().await;
+    let config = data.get::<Config>().unwrap();
+    let old_channel = old.as_ref().and_then(|s| s.channel_id);
+    let new_channel = new.channel_id;
 
-    if let (Some(channel_id), Some(guild_id)) = (new.channel_id, new.guild_id) {
-        if channel_id == config.generator.channel_id {
-            let channel = channel_id.to_channel(&ctx).await?;
-
-            if let Some(guild_channel) = channel.guild() {
-                if let Some(parent_id) = guild_channel.parent_id {
-                    let name = config
-                        .drop_rates
-                        .get_random_drop(&config.channels)
-                        .map_or(DEFAULT_CHANNEL_NAME, |s| s.as_str());
-
-                    let builder = CreateChannel::new(name)
-                        .category(parent_id)
-                        .kind(ChannelType::Voice);
-
-                    let channel = GuildId::new(guild_id.into())
-                        .create_channel(&ctx, builder)
-                        .await?;
-
-                    guild_id.move_member(&ctx, new.user_id, channel.id).await?;
-                }
+    match (old_channel, new_channel) {
+        (None, Some(_)) => {
+            handle_connection(stats, &ctx, config, &new).await?;
+        }
+        (Some(_), None) => {
+            if let Some(old_state) = old {
+                handle_disconnection(stats, &ctx, config, old_state).await?;
             }
         }
-    }
+        (Some(old_ch), Some(new_ch)) if old_ch != new_ch => {
+            if let Some(old_state) = old {
+                handle_disconnection(stats, &ctx, config, old_state).await?;
+            }
 
-    if let Some(state) = old {
-        handle_deconnection(&ctx, config, state).await?;
+            handle_connection(stats, &ctx, config, &new).await?;
+        }
+        _ => {}
     }
 
     Ok(())
 }
 
-async fn handle_deconnection(ctx: &Context, config: &mut Config, state: VoiceState) -> Result<()> {
-    if let Some(channel_id) = state.channel_id {
-        if channel_id != config.generator.channel_id {
-            let channel = channel_id.to_channel(&ctx).await?;
+async fn handle_connection(
+    stats: &VoiceStats,
+    ctx: &Context,
+    config: &Config,
+    state: &VoiceState,
+) -> Result<()> {
+    if let Some(channel_id) = state.channel_id
+        && let Some(guild_id) = state.guild_id
+        && channel_id == config.generator.channel_id
+        && let Some(guild_channel) = channel_id.to_channel(&ctx).await?.guild()
+        && let Some(parent_id) = guild_channel.parent_id
+    {
+        let name = config
+            .drop_rates
+            .get_random_drop(&config.channels)
+            .map_or(DEFAULT_CHANNEL_NAME, |s| s.as_str());
 
-            if let Some(guild_channel) = channel.guild() {
-                if guild_channel.parent_id == Some(config.generator.parent_id)
-                    && channel_is_empty(&ctx, &guild_channel).await?
-                {
-                    channel_id.delete(&ctx).await?;
-                }
-            }
+        let builder = CreateChannel::new(name)
+            .category(parent_id)
+            .kind(ChannelType::Voice);
+
+        let new_channel = guild_id.create_channel(&ctx, builder).await?;
+
+        guild_id
+            .move_member(&ctx, state.user_id, new_channel.id)
+            .await?;
+
+        stats.user_joined(state.user_id).await;
+    }
+
+    Ok(())
+}
+
+async fn handle_disconnection(
+    stats: &VoiceStats,
+    ctx: &Context,
+    config: &Config,
+    state: VoiceState,
+) -> Result<()> {
+    if let Some(channel_id) = state.channel_id
+        && channel_id != config.generator.channel_id
+        && let Some(guild_channel) = channel_id.to_channel(&ctx).await?.guild()
+        && guild_channel.parent_id == Some(config.generator.parent_id)
+    {
+        if channel_is_empty(ctx, &guild_channel).await? {
+            channel_id.delete(&ctx).await?;
         }
+
+        stats.user_left(state.user_id).await?;
     }
 
     Ok(())
