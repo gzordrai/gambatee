@@ -1,6 +1,10 @@
-target
 .git
 .gitignore
-Cargo.lock
+.github
+
+target
+
+README.md
+LICENSE
+
 Dockerfile
-*.log
