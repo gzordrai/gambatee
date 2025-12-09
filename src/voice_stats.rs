@@ -42,7 +42,7 @@ impl VoiceStats {
 
             sqlx::query(
                 "INSERT INTO voice_sessions (user_id, duration_seconds, timestamp) 
-                 VALUES (?, ?, ?)",
+                 VALUES ($1, $2, $3)",
             )
             .bind(user_id)
             .bind(duration_secs)
