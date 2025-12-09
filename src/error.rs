@@ -8,9 +8,15 @@ pub enum Error {
     #[error("Failed to load the config: {0}")]
     Config(#[from] config::ConfigError),
 
-    #[error("Failed to ")]
-    Client(#[from] serenity::Error),
+    #[error("Serenity error: {0}")]
+    Serenity(#[from] Box<serenity::Error>),
 
     #[error("Failed to ")]
     Sqlx(#[from] sqlx::Error),
+}
+
+impl From<serenity::Error> for Error {
+    fn from(err: serenity::Error) -> Self {
+        Error::Serenity(Box::new(err))
+    }
 }
