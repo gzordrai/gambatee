@@ -13,6 +13,9 @@ pub enum Error {
 
     #[error("Failed to ")]
     Sqlx(#[from] sqlx::Error),
+
+    #[error("Migration failed: {0}")]
+    Migration(#[from] sqlx::migrate::MigrateError),
 }
 
 impl From<serenity::Error> for Error {
