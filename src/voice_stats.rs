@@ -38,7 +38,7 @@ impl VoiceStats {
             let duration = Utc::now() - joined_at;
             let user_id = user_id.get() as i64;
             let duration_secs = duration.num_seconds();
-            let timestamp = Utc::now().to_rfc3339();
+            let timestamp = Utc::now();
 
             sqlx::query(
                 "INSERT INTO voice_sessions (user_id, duration_seconds, timestamp) 
