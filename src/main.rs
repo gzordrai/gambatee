@@ -10,13 +10,16 @@ mod error;
 mod handlers;
 mod voice_stats;
 
+const DEFAULT_CONFIG_PATH: &str = "/etc/gambatee/config.toml";
+
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::init();
 
     let token = std::env::var("DISCORD_TOKEN")?;
     let url = std::env::var("DATABASE_URL")?;
-    let config = Config::from_str("config.toml")?;
+    let config = Config::from_str(DEFAULT_CONFIG_PATH)?;
+
     let intents = GatewayIntents::GUILDS | GatewayIntents::GUILD_VOICE_STATES;
     let voice_stats = Arc::new(VoiceStats::new(&url).await?);
 

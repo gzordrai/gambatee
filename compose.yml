@@ -25,6 +25,8 @@ services:
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./config.toml:/etc/gambatee/config.toml:ro
 
 volumes:
   postgres-data:

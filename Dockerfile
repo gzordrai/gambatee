@@ -23,6 +23,7 @@ RUN apk add --no-cache \
 WORKDIR /usr/local/bin
 
 COPY --from=builder /app/target/release/gambatee .
-COPY --from=builder /app/config.toml .
+
+RUN mkdir -p /etc/gambatee
 
 ENTRYPOINT ["/usr/local/bin/gambatee"]
