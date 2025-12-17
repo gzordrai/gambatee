@@ -1,0 +1,178 @@
+{
+    "id": null,
+    "uid": "discord-voice-stats",
+    "title": "Discord Voice Stats",
+    "tags": [
+        "discord",
+        "voice"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "5m",
+    "time": {
+        "from": "now-30d",
+        "to": "now"
+    },
+    "templating": {
+        "list": [
+            {
+                "name": "user_id",
+                "type": "query",
+                "label": "User ID",
+                "datasource": {
+                    "type": "postgres",
+                    "uid": "postgres-main"
+                },
+                "refresh": 2,
+                "query": "SELECT DISTINCT user_id::text FROM user_weekly_stats ORDER BY 1;",
+                "multi": false,
+                "includeAll": false,
+                "current": {
+                    "text": "123456789",
+                    "value": "123456789"
+                }
+            }
+        ]
+    },
+    "panels": [
+        {
+            "id": 6,
+            "type": "timeseries",
+            "title": "Annual Voice Time (Last 12 Months)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawQuery": true,
+                    "rawSql": "SELECT month_start AS time, SUM(total_seconds) / 3600.0 AS value\nFROM user_monthly_stats\nWHERE month_start >= DATE_TRUNC('month', NOW()) - INTERVAL '12 months'\nGROUP BY month_start\nORDER BY month_start;"
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "type": "barchart",
+            "title": "Top 10 Users by Voice Hours (This Week)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 8
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT user_id::text AS metric, total_seconds / 3600.0 AS value\nFROM user_weekly_stats\nWHERE year = EXTRACT(YEAR FROM NOW())\n  AND week = EXTRACT(WEEK FROM NOW())\nORDER BY total_seconds DESC\nLIMIT 10;"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "type": "barchart",
+            "title": "Top 10 Users by Voice Hours (This Month)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT user_id::text AS metric, total_seconds / 3600.0 AS value\nFROM user_monthly_stats\nWHERE year = EXTRACT(YEAR FROM NOW())\n  AND month = EXTRACT(MONTH FROM NOW())\nORDER BY total_seconds DESC\nLIMIT 10;"
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "type": "timeseries",
+            "title": "Weekly Trend (Single User)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawQuery": true,
+                    "rawSql": "SELECT week_start AS time, total_seconds / 3600.0 AS value\nFROM user_weekly_stats\nWHERE user_id = ${user_id}::bigint\n  AND week_start >= NOW() - INTERVAL '12 weeks'\nORDER BY week_start;"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "type": "timeseries",
+            "title": "Month-over-Month Comparison (All Users)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 16
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawQuery": true,
+                    "rawSql": "SELECT month_start AS time, user_id::text AS metric, total_seconds / 3600.0 AS value\nFROM user_monthly_stats\nWHERE month_start >= NOW() - INTERVAL '6 months'\nORDER BY month_start, total_seconds DESC;"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "type": "barchart",
+            "title": "Top 10 Users by Voice Hours (Last Month)",
+            "datasource": {
+                "type": "postgres",
+                "uid": "postgres-main"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 24
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT user_id::text AS metric, total_seconds / 3600.0 AS value\nFROM user_monthly_stats\nWHERE year = EXTRACT(YEAR FROM (NOW() - INTERVAL '1 month'))\n  AND month = EXTRACT(MONTH FROM (NOW() - INTERVAL '1 month'))\nORDER BY total_seconds DESC\nLIMIT 10;"
+                }
+            ]
+        }
+    ]
+}
