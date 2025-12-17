@@ -17,7 +17,7 @@ pub async fn voice_state_update(
 
     match (old_channel, new_channel) {
         (None, Some(_)) => {
-            handle_connection(stats, &ctx, config, &new).await?;
+            handle_connection(&stats, &ctx, config, &new).await?;
         }
         (Some(_), None) => {
             if let Some(old_state) = old {
@@ -25,11 +25,17 @@ pub async fn voice_state_update(
             }
         }
         (Some(old_ch), Some(new_ch)) if old_ch != new_ch => {
+            if new_ch == config.generator.afk_channel_id
+                && let Some(member) = new.member
+            {
+                stats.user_left(member.user).await?;
+            } else if old_ch == config.generator.afk_channel_id {
+                stats.user_joined(new.user_id).await;
+            }
+
             if let Some(old_state) = old {
                 handle_disconnection(stats, &ctx, config, old_state).await?;
             }
-
-            handle_connection(stats, &ctx, config, &new).await?;
         }
         _ => {}
     }
@@ -63,9 +69,9 @@ async fn handle_connection(
         guild_id
             .move_member(&ctx, state.user_id, new_channel.id)
             .await?;
-
-        stats.user_joined(state.user_id).await;
     }
+
+    stats.user_joined(state.user_id).await;
 
     Ok(())
 }
@@ -80,12 +86,13 @@ async fn handle_disconnection(
         && channel_id != config.generator.channel_id
         && let Some(guild_channel) = channel_id.to_channel(&ctx).await?.guild()
         && guild_channel.parent_id == Some(config.generator.parent_id)
+        && let Some(member) = state.member
     {
         if channel_is_empty(ctx, &guild_channel).await? {
             channel_id.delete(&ctx).await?;
         }
 
-        stats.user_left(state.user_id).await?;
+        stats.user_left(member.user).await?;
     }
 
     Ok(())
