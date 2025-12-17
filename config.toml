@@ -1,6 +1,7 @@
 [generator]
 channel_id = "1239233009886957709"
 parent_id = "387200053229387777"
+afk_channel_id = "328581381296750593"
 
 [drop_rates]
 common = 59.0

@@ -35,6 +35,7 @@ impl TypeMapKey for Config {
 pub struct Generator {
     pub channel_id: ChannelId,
     pub parent_id: ChannelId,
+    pub afk_channel_id: ChannelId,
 }
 
 #[derive(Clone, Debug, Deserialize)]
