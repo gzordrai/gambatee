@@ -2,6 +2,8 @@ use std::{str::FromStr, sync::Arc};
 
 use serenity::Client;
 use serenity::all::GatewayIntents;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 use crate::{config::Config, error::Result, handlers::Handler, voice_stats::VoiceStats};
 
@@ -14,7 +16,11 @@ const DEFAULT_CONFIG_PATH: &str = "/etc/gambatee/config.toml";
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::DEBUG)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)?;
 
     let token = std::env::var("DISCORD_TOKEN")?;
     let url = std::env::var("DATABASE_URL")?;
