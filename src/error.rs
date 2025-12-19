@@ -19,6 +19,9 @@ pub enum Error {
 
     #[error("Failed to set global default tracing subscriber: {0}")]
     SetGlobalDefault(#[from] tracing::subscriber::SetGlobalDefaultError),
+
+    #[error("Job scheduler error: {0}")]
+    JobScheduler(#[from] tokio_cron_scheduler::JobSchedulerError),
 }
 
 impl From<serenity::Error> for Error {

@@ -10,6 +10,7 @@ type Names = Vec<String>;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     pub generator: Generator,
+    pub stats: Stats,
     pub drop_rates: DropRates,
     pub channels: Channels,
 }
@@ -29,6 +30,13 @@ impl FromStr for Config {
 
 impl TypeMapKey for Config {
     type Value = Config;
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Stats {
+    pub channel_id: ChannelId,
+    pub weekly_schedule: String,
+    pub monthly_schedule: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
