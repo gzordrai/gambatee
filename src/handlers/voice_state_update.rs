@@ -27,7 +27,7 @@ pub async fn voice_state_update(
                 "User {} joined voice channel {:?}",
                 new.user_id, new.channel_id
             );
-            handle_connection(&stats, &ctx, config, &new).await?;
+            handle_connection(stats, &ctx, config, &new).await?;
         }
         (Some(_), None) => {
             info!(
@@ -52,6 +52,8 @@ pub async fn voice_state_update(
                 stats.user_left(&member.user).await?;
             } else if old_ch == config.generator.afk_channel_id {
                 debug!("User {} left AFK channel", new.user_id);
+
+                handle_connection(stats, &ctx, config, &new).await?;
                 stats.user_joined(new.user_id).await;
             }
 
