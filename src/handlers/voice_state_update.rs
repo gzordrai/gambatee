@@ -165,16 +165,16 @@ impl<'a> VoiceStateTransition<'a> {
             return Ok(());
         }
 
+        if let Some(ref member) = old_state.member {
+            self.stats.user_left(&member.user).await?;
+        }
+
         if channel_is_empty(self.ctx, &guild_channel).await? {
             info!("Channel {} is empty, deleting it", channel_id);
             channel_id.delete(&self.ctx).await?;
             debug!("Successfully deleted channel {}", channel_id);
         } else {
             debug!("Channel {} still has members, keeping it", channel_id);
-        }
-
-        if let Some(member) = &old_state.member {
-            self.stats.user_left(&member.user).await?;
         }
 
         Ok(())
