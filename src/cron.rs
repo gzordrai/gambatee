@@ -82,7 +82,7 @@ async fn create_stats_job(
 }
 
 fn create_stats_embed(title: &str, users: &[UserStats]) -> CreateEmbed {
-    let mut embed = CreateEmbed::new().title(title).color(0x5865F2).image("https://cdn.ronalbathrooms.com/assets_thumbnails/Magazine/2021/19008/image-thumb__19008__magazine-details-hero-img/378_high.avif");
+    let mut embed = CreateEmbed::new().title(title).color(0x5865F2).description("C'est l'heure de prendre la douche:").image("https://cdn.ronalbathrooms.com/assets_thumbnails/Magazine/2021/19008/image-thumb__19008__magazine-details-hero-img/378_high.avif");
 
     for (i, stat) in users.iter().enumerate() {
         embed = embed.field(
