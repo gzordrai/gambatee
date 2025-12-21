@@ -39,39 +39,16 @@ impl<'a> VoiceStateTransition<'a> {
     }
 
     pub async fn handle(&self) -> Result<()> {
-        debug!(
-            "Processing voice state - Old channel: {:?}, New channel: {:?}, User: {}",
-            self.old_channel, self.new_channel, self.new_state.user_id
-        );
-
         if self.is_joining() && !self.is_joining_afk() {
-            info!(
-                "User {} joined voice channel {:?}",
-                self.new_state.user_id, self.new_state.channel_id
-            );
-
             if self.is_joining_generator() {
                 self.handle_connection().await?;
             }
 
             self.stats.user_joined(self.new_state.user_id).await;
         } else if self.is_leaving() {
-            info!(
-                "User {} left voice channel {:?}",
-                self.new_state.user_id, self.old_channel
-            );
             self.handle_disconnection().await?;
         } else if self.is_moving() {
-            info!(
-                "User {} moved from channel {:?} to {:?}",
-                self.new_state.user_id, self.old_channel, self.new_channel
-            );
             self.handle_move().await?;
-        } else {
-            debug!(
-                "No significant voice state change for user {}",
-                self.new_state.user_id
-            );
         }
 
         Ok(())
@@ -92,11 +69,6 @@ impl<'a> VoiceStateTransition<'a> {
             return Ok(());
         }
 
-        debug!(
-            "User {} joined generator channel {}",
-            self.new_state.user_id, channel_id
-        );
-
         let Some(guild_channel) = channel_id.to_channel(&self.ctx).await?.guild() else {
             warn!("Could not get guild channel for {}", channel_id);
             return Ok(());
@@ -113,35 +85,22 @@ impl<'a> VoiceStateTransition<'a> {
             .get_random_drop(&self.config.channels)
             .map_or(DEFAULT_CHANNEL_NAME, |s| s.as_str());
 
-        info!(
-            "Creating new voice channel '{}' in category {}",
-            name, parent_id
-        );
-
         let builder = CreateChannel::new(name)
             .category(parent_id)
             .kind(ChannelType::Voice);
 
         let new_channel = guild_id.create_channel(&self.ctx, builder).await?;
 
-        info!(
-            "Moving user {} to new channel {}",
-            self.new_state.user_id, new_channel.id
-        );
-
         guild_id
             .move_member(&self.ctx, self.new_state.user_id, new_channel.id)
             .await?;
-
-        debug!(
-            "Successfully created and moved user to channel {}",
-            new_channel.id
-        );
 
         Ok(())
     }
 
     async fn handle_disconnection(&self) -> Result<()> {
+        debug!("Handling disconnection for user {}", self.new_state.user_id);
+
         let Some(ref old_state) = self.old_state else {
             return Ok(());
         };
@@ -154,14 +113,11 @@ impl<'a> VoiceStateTransition<'a> {
             return Ok(());
         }
 
-        debug!("Checking if channel {} should be deleted", channel_id);
-
         let Some(guild_channel) = channel_id.to_channel(&self.ctx).await?.guild() else {
             return Ok(());
         };
 
         if guild_channel.parent_id != Some(self.config.generator.parent_id) {
-            debug!("Channel {} not in managed category, ignoring", channel_id);
             return Ok(());
         }
 
@@ -169,18 +125,16 @@ impl<'a> VoiceStateTransition<'a> {
             self.stats.user_left(&member.user).await?;
         }
 
-        if channel_is_empty_excluding(self.ctx, &guild_channel, old_state.user_id)? {
-            info!("Channel {} is empty, deleting it", channel_id);
+        if channel_is_empty(self.ctx, &guild_channel)? {
             channel_id.delete(&self.ctx).await?;
-            debug!("Successfully deleted channel {}", channel_id);
-        } else {
-            debug!("Channel {} still has members, keeping it", channel_id);
         }
 
         Ok(())
     }
 
     async fn handle_move(&self) -> Result<()> {
+        debug!("Handling a move for user {}", self.new_state.user_id);
+
         if self.is_joining_generator() {
             self.handle_disconnection().await?;
             self.handle_connection().await?;
@@ -190,12 +144,10 @@ impl<'a> VoiceStateTransition<'a> {
             }
         } else if self.is_joining_afk() {
             if let Some(ref member) = self.new_state.member {
-                debug!("User {} moved to AFK channel", member.user.id);
                 self.handle_disconnection().await?;
                 self.stats.user_left(&member.user).await?;
             }
         } else if self.is_leaving_afk() {
-            debug!("User {} left AFK channel", self.new_state.user_id);
             self.stats.user_joined(self.new_state.user_id).await;
         }
 
@@ -235,26 +187,11 @@ pub async fn voice_state_update(
 ) -> Result<()> {
     let data = ctx.data.read().await;
     let config = data.get::<Config>().unwrap();
-
     let transition = VoiceStateTransition::new(stats, &ctx, config, old, new);
+
     transition.handle().await
 }
 
-fn channel_is_empty_excluding(
-    ctx: &Context,
-    channel: &GuildChannel,
-    excluding_user: serenity::all::UserId,
-) -> Result<bool> {
-    let members = channel.members(ctx)?;
-    let remaining = members
-        .iter()
-        .filter(|m| m.user.id != excluding_user)
-        .count();
-
-    debug!(
-        "Channel {} has {} members (excluding user {})",
-        channel.id, remaining, excluding_user
-    );
-
-    Ok(remaining == 0)
+fn channel_is_empty(ctx: &Context, channel: &GuildChannel) -> Result<bool> {
+    Ok(channel.members(ctx)?.is_empty())
 }

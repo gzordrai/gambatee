@@ -33,15 +33,9 @@ impl VoiceStats {
         info!("Initializing VoiceStats with database");
 
         let options = PgConnectOptions::from_str(url)?;
-        debug!("Parsed database connection options");
-
-        info!("Connecting to PostgreSQL database...");
         let pool = PgPool::connect_with(options).await?;
-        info!("Successfully connected to database");
 
-        info!("Running database migrations...");
         sqlx::migrate!("./migrations").run(&pool).await?;
-        info!("Database migrations completed successfully");
 
         Ok(Self {
             pool,
@@ -51,29 +45,16 @@ impl VoiceStats {
 
     pub async fn user_joined(&self, user_id: UserId) {
         let now = Utc::now();
-        info!(
-            "User {} joined voice - recording session start at {}",
-            user_id, now
-        );
 
         self.active_sessions.lock().await.insert(user_id.get(), now);
-
-        debug!(
-            "Active sessions count: {}",
-            self.active_sessions.lock().await.len()
-        );
     }
 
     pub async fn user_left(&self, user: &User) -> Result<()> {
         let user_id = user.id;
         let username = user.name.clone();
+        let joined_at = self.active_sessions.lock().await.remove(&user_id.get());
 
-        info!(
-            "User {} ({}) left voice - processing session",
-            user_id, username
-        );
-
-        if let Some(joined_at) = self.active_sessions.lock().await.remove(&user_id.into()) {
+        if let Some(joined_at) = joined_at {
             let now = Utc::now();
             let duration = now - joined_at;
             let duration_secs = duration.num_seconds();
@@ -84,11 +65,8 @@ impl VoiceStats {
             );
 
             let user_id_i64 = user_id.get() as i64;
-
-            debug!("Starting database transaction");
             let mut tx = self.pool.begin().await?;
 
-            debug!("Upserting user {} into database", username);
             sqlx::query(
                 r#"
                 INSERT INTO users (user_id, username)
@@ -103,7 +81,6 @@ impl VoiceStats {
             .execute(&mut *tx)
             .await?;
 
-            debug!("Inserting voice session record for user {}", username);
             sqlx::query(
                 r#"
                 INSERT INTO voice_sessions (user_id, duration_seconds, timestamp)
@@ -116,14 +93,9 @@ impl VoiceStats {
             .execute(&mut *tx)
             .await?;
 
-            debug!("Committing transaction");
             tx.commit().await?;
 
             info!("Successfully saved voice session for user {}", username);
-            debug!(
-                "Active sessions count: {}",
-                self.active_sessions.lock().await.len()
-            );
         } else {
             warn!(
                 "User {} ({}) left but no active session found - possible bot restart or missed join event",
