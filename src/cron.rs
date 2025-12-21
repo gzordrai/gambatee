@@ -82,11 +82,11 @@ async fn create_stats_job(
 }
 
 fn create_stats_embed(title: &str, users: &[UserStats]) -> CreateEmbed {
-    let mut embed = CreateEmbed::new().title(title).color(0x5865F2);
+    let mut embed = CreateEmbed::new().title(title).color(0x5865F2).image("https://cdn.ronalbathrooms.com/assets_thumbnails/Magazine/2021/19008/image-thumb__19008__magazine-details-hero-img/378_high.avif");
 
     for (i, stat) in users.iter().enumerate() {
         embed = embed.field(
-            format!("{} - {}", i, stat.username.clone()),
+            format!("{} - {}", i + 1, stat.username.clone()),
             format!(
                 "{:.1}h - {} sessions ({:.1}h avg)",
                 stat.total_hours, stat.total_sessions, stat.avg_hours_per_session
