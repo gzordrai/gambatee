@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serenity::all::{User, UserId};
 use sqlx::{FromRow, PgPool, postgres::PgConnectOptions};
 use tokio::sync::Mutex;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use crate::error::Result;
 
@@ -46,6 +46,7 @@ impl VoiceStats {
     pub async fn user_joined(&self, user_id: UserId) {
         let now = Utc::now();
 
+        info!("New voice session started for user {}", user_id);
         self.active_sessions.lock().await.insert(user_id.get(), now);
     }
 

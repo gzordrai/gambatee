@@ -21,7 +21,7 @@ const DEFAULT_CONFIG_PATH: &str = "/etc/gambatee/config.toml";
 #[tokio::main]
 async fn main() -> Result<()> {
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
+        .with_max_level(Level::INFO)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;

@@ -1,5 +1,5 @@
 use serenity::all::{ChannelId, ChannelType, Context, CreateChannel, GuildChannel, VoiceState};
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 use crate::{config::Config, error::Result, voice_stats::VoiceStats};
 
@@ -45,8 +45,14 @@ impl<'a> VoiceStateTransition<'a> {
             }
 
             self.stats.user_joined(self.new_state.user_id).await;
-        } else if self.is_leaving() {
+        } else if self.is_leaving() && !self.is_leaving_afk() {
             self.handle_disconnection().await?;
+
+            if let Some(old_state) = &self.old_state
+                && let Some(member) = &old_state.member
+            {
+                self.stats.user_left(&member.user).await?;
+            };
         } else if self.is_moving() {
             self.handle_move().await?;
         }
@@ -119,10 +125,6 @@ impl<'a> VoiceStateTransition<'a> {
 
         if guild_channel.parent_id != Some(self.config.generator.parent_id) {
             return Ok(());
-        }
-
-        if let Some(member) = &old_state.member {
-            self.stats.user_left(&member.user).await?;
         }
 
         if channel_is_empty(self.ctx, &guild_channel)? {
