@@ -4,7 +4,7 @@ parent_id = "387200053229387777"
 afk_channel_id = "328581381296750593"
 
 [stats]
-channel_id = "1409797899814043759"
+channel_id = "315952232304476163"
 weekly_schedule = "0 0 19 * * SUN"
 monthly_schedule = "0 0 19 L * *"
 
