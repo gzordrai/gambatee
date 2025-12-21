@@ -117,12 +117,12 @@ impl VoiceStats {
             r#"
             SELECT
                 COALESCE(u.username, s.user_id::text) AS username,
-                s.total_seconds / 3600.0 AS total_hours,
+                (s.total_seconds / 3600.0)::double precision AS total_hours,
                 s.total_sessions,
-                CASE 
-                    WHEN s.total_sessions > 0 
-                    THEN (s.total_seconds::float / s.total_sessions) / 3600.0
-                    ELSE 0
+                CASE
+                    WHEN s.total_sessions > 0
+                    THEN ((s.total_seconds::float / s.total_sessions) / 3600.0)::double precision
+                    ELSE 0::double precision
                 END AS avg_hours_per_session
             FROM {} s
             LEFT JOIN users u ON u.user_id = s.user_id
