@@ -165,11 +165,11 @@ impl<'a> VoiceStateTransition<'a> {
             return Ok(());
         }
 
-        if let Some(ref member) = old_state.member {
+        if let Some(member) = &old_state.member {
             self.stats.user_left(&member.user).await?;
         }
 
-        if channel_is_empty(self.ctx, &guild_channel).await? {
+        if channel_is_empty_excluding(self.ctx, &guild_channel, old_state.user_id)? {
             info!("Channel {} is empty, deleting it", channel_id);
             channel_id.delete(&self.ctx).await?;
             debug!("Successfully deleted channel {}", channel_id);
@@ -240,11 +240,21 @@ pub async fn voice_state_update(
     transition.handle().await
 }
 
-async fn channel_is_empty(ctx: &Context, channel: &GuildChannel) -> Result<bool> {
+fn channel_is_empty_excluding(
+    ctx: &Context,
+    channel: &GuildChannel,
+    excluding_user: serenity::all::UserId,
+) -> Result<bool> {
     let members = channel.members(ctx)?;
-    let is_empty = members.is_empty();
+    let remaining = members
+        .iter()
+        .filter(|m| m.user.id != excluding_user)
+        .count();
 
-    debug!("Channel {} has {} members", channel.id, members.len());
+    debug!(
+        "Channel {} has {} members (excluding user {})",
+        channel.id, remaining, excluding_user
+    );
 
-    Ok(is_empty)
+    Ok(remaining == 0)
 }
