@@ -151,6 +151,8 @@ impl<'a> VoiceStateTransition<'a> {
             }
         } else if self.is_leaving_afk() {
             self.stats.user_joined(self.new_state.user_id).await;
+        } else {
+            self.handle_disconnection().await?;
         }
 
         Ok(())
